@@ -4,9 +4,10 @@ import pandas as pd
 st.set_page_config(page_title="CSV → HTML Snippet Generator", layout="wide")
 
 st.title("📄 CSV to HTML Scholarly Publications Generator")
-st.write("Upload Scopus-style CSV and get a single HTML snippet (copy–paste ready).")
+st.write("Upload Scopus-style CSV and get a single HTML snippet (A–Z by first author).")
 
 uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
+
 
 def format_authors(author_str):
     if pd.isna(author_str):
@@ -20,6 +21,14 @@ def format_authors(author_str):
         return f"{authors[0]} &amp; {authors[1]}"
     else:
         return ", ".join(authors[:-1]) + ", &amp; " + authors[-1]
+
+
+def first_author_key(author_str):
+    if pd.isna(author_str):
+        return ""
+    # Use first author only for A–Z sorting
+    return author_str.split(";")[0].strip().lower()
+
 
 def build_entry(idx, row):
     authors = format_authors(row["Authors"])
@@ -38,7 +47,7 @@ def build_entry(idx, row):
 
     issue_part = f"({int(issue)})" if pd.notna(issue) else ""
 
-    html = f"""
+    return f"""
 <p style="font-family:Lucida Sans Unicode,Lucida Grande,sans-serif;">
 <strong>{idx}.</strong>
 {authors} ({int(year)}). {title}.
@@ -47,7 +56,7 @@ def build_entry(idx, row):
 </p>
 <p style="font-family:Lucida Sans Unicode,Lucida Grande,sans-serif;">&nbsp;</p>
 """
-    return html
+
 
 if uploaded_file:
     df = pd.read_csv(uploaded_file)
@@ -61,9 +70,13 @@ if uploaded_file:
     df = df[required_cols]
     df = df.dropna(subset=["Authors", "Title", "Year"])
 
+    # 🔤 SORT A–Z BY FIRST AUTHOR
+    df["sort_key"] = df["Authors"].apply(first_author_key)
+    df = df.sort_values("sort_key").drop(columns=["sort_key"])
+
     output_html = ""
-    for i, row in df.iterrows():
-        output_html += build_entry(len(output_html.split("<strong>")), row)
+    for idx, (_, row) in enumerate(df.iterrows(), start=1):
+        output_html += build_entry(idx, row)
 
     st.subheader("Generated HTML (Copy & Paste)")
     st.text_area(
