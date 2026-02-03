@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import streamlit.components.v1 as components
+import datetime
 
 st.set_page_config(page_title="CSV → HTML Snippet Generator", layout="wide")
 
@@ -66,7 +67,47 @@ def build_entry(idx, row):
     if page_start and page_end:
         pages_part = f", {page_start}–{page_end}"
 
+    # Get the current date and time
+    current_date = datetime.datetime.now()
+    
+    # Use strftime with "%B" to get the full month name
+    full_month_name = current_date.strftime("%B")
+
     return f"""
+<div class="container">
+    <div class="row" ng-init="GetAboutUs()">
+        <div class="col-sm-12 ng-binding" ng-bind-html="trustAsHtml(AboutUsHome)">
+
+            <div class="preview-box active" id="eng4" style="display: block;">
+                <p ng-bind-html="trustAsHtml(ApproveBodyContent.BodyContentEng)" class="ng-binding"></p>
+                <div style="max-width:100%; overflow:hidden">
+                    <iframe frameborder="0" height="1800px" scrolling="no" src="https://dl.bhu.ac.in/newar/"
+                        width="100%"></iframe>
+                </div>
+
+                <div class="News"
+                    style="background-color:#c0392b; border:1px solid; margin-bottom:2px; margin-left:auto; margin-right:auto; margin-top:2px; max-width:1200px">
+                    &nbsp;
+                    <p style="margin-left:14px; margin-right:14px; text-align:center">
+                        <span style="font-size:28px">
+                            <span style="font-family:Lucida Sans Unicode,Lucida Grande,sans-serif">
+                                <span style="color:#ffffff"><strong>Recent Scholarly Publications of BHU
+                                        Researchers</strong></span>
+                            </span>
+                        </span>
+                        <br>
+                        <span style="font-size:22px">
+                            <span style="font-family:Lucida Sans Unicode,Lucida Grande,sans-serif">
+                            <span style="color:#ffffff"><strong>( {full_month_name} &nbsp;{year}) </strong></span>
+                            </span>
+                        </span>
+                    </p>
+                    &nbsp;
+                    <!--  Scholarly Publications Starts -->
+                    <div class="contents"
+                        style="background-color:#fbf5f5; border:1px solid #cccccc; color:#222222; font-family:Lucida Sans Unicode,Lucida Grande,sans-serif; font-size:16px; line-height:22px; margin-top:10px; padding:0 20px 20px">
+                        <div class="xyz" style="height:300px; overflow-x:hidden; overflow-y:scroll; width:100%">
+                        
 <p style="font-family:Lucida Sans Unicode,Lucida Grande,sans-serif;">
 <strong>{idx}.</strong>
 {authors} ({year}). {title}.
@@ -74,6 +115,18 @@ def build_entry(idx, row):
 {'<a href="https://doi.org/' + doi + '" target="_blank">https://doi.org/' + doi + '</a>' if pd.notna(doi) else ''}
 </p>
 <p style="font-family:Lucida Sans Unicode,Lucida Grande,sans-serif;">&nbsp;</p>
+
+</div>
+                    </div>
+                    <!--  Scholarly Publications ends -->
+                </div>
+                <p style="font-family:Lucida Sans Unicode,Lucida Grande,sans-serif;">
+                </p>
+
+            </div>
+        </div>
+    </div>
+</div>
 """
 
 
