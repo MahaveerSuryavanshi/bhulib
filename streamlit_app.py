@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import streamlit.components.v1 as components
-import datetime
 
 st.set_page_config(page_title="CSV → HTML Snippet Generator", layout="wide")
 
@@ -74,7 +73,40 @@ def build_entry(idx, row):
     full_month_name = current_date.strftime("%B")
 
     return f"""
-<div class="container">
+
+                        
+<p style="font-family:Lucida Sans Unicode,Lucida Grande,sans-serif;">
+<strong>{idx}.</strong>
+{authors} ({year}). {title}.
+<em>{journal}</em>{', ' if volume_part else ''}{volume_part}{issue_part}{pages_part}.
+{'<a href="https://doi.org/' + doi + '" target="_blank">https://doi.org/' + doi + '</a>' if pd.notna(doi) else ''}
+</p>
+<p style="font-family:Lucida Sans Unicode,Lucida Grande,sans-serif;">&nbsp;</p>
+
+
+"""
+
+
+# ---------- MAIN ----------
+
+if uploaded_file:
+    df = pd.read_csv(uploaded_file)
+
+    required_cols = [
+        "Authors", "Year", "Title",
+        "Source title", "Volume",
+        "Issue", "Page start", "Page end", "DOI"
+    ]
+
+    df = df[required_cols]
+    df = df.dropna(subset=["Authors", "Title", "Year"])
+
+    # 🔤 SORT A–Z BY FIRST AUTHOR
+    df["sort_key"] = df["Authors"].apply(first_author_key)
+    df = df.sort_values("sort_key").drop(columns=["sort_key"])
+
+    output_html = f"""
+    <div class="container">
     <div class="row" ng-init="GetAboutUs()">
         <div class="col-sm-12 ng-binding" ng-bind-html="trustAsHtml(AboutUsHome)">
 
@@ -98,7 +130,7 @@ def build_entry(idx, row):
                         <br>
                         <span style="font-size:22px">
                             <span style="font-family:Lucida Sans Unicode,Lucida Grande,sans-serif">
-                            <span style="color:#ffffff"><strong>( {full_month_name} &nbsp;{year}) </strong></span>
+                            <span style="color:#ffffff"><strong>( January &nbsp; 2026) </strong></span>
                             </span>
                         </span>
                     </p>
@@ -107,48 +139,7 @@ def build_entry(idx, row):
                     <div class="contents"
                         style="background-color:#fbf5f5; border:1px solid #cccccc; color:#222222; font-family:Lucida Sans Unicode,Lucida Grande,sans-serif; font-size:16px; line-height:22px; margin-top:10px; padding:0 20px 20px">
                         <div class="xyz" style="height:300px; overflow-x:hidden; overflow-y:scroll; width:100%">
-                        
-<p style="font-family:Lucida Sans Unicode,Lucida Grande,sans-serif;">
-<strong>{idx}.</strong>
-{authors} ({year}). {title}.
-<em>{journal}</em>{', ' if volume_part else ''}{volume_part}{issue_part}{pages_part}.
-{'<a href="https://doi.org/' + doi + '" target="_blank">https://doi.org/' + doi + '</a>' if pd.notna(doi) else ''}
-</p>
-<p style="font-family:Lucida Sans Unicode,Lucida Grande,sans-serif;">&nbsp;</p>
-
-</div>
-                    </div>
-                    <!--  Scholarly Publications ends -->
-                </div>
-                <p style="font-family:Lucida Sans Unicode,Lucida Grande,sans-serif;">
-                </p>
-
-            </div>
-        </div>
-    </div>
-</div>
-"""
-
-
-# ---------- MAIN ----------
-
-if uploaded_file:
-    df = pd.read_csv(uploaded_file)
-
-    required_cols = [
-        "Authors", "Year", "Title",
-        "Source title", "Volume",
-        "Issue", "Page start", "Page end", "DOI"
-    ]
-
-    df = df[required_cols]
-    df = df.dropna(subset=["Authors", "Title", "Year"])
-
-    # 🔤 SORT A–Z BY FIRST AUTHOR
-    df["sort_key"] = df["Authors"].apply(first_author_key)
-    df = df.sort_values("sort_key").drop(columns=["sort_key"])
-
-    output_html = ""
+    """
     for idx, (_, row) in enumerate(df.iterrows(), start=1):
         output_html += build_entry(idx, row)
 
@@ -160,7 +151,18 @@ if uploaded_file:
         height=600,
         key="html_output"
     )
+    output_html +=f"""  </div>
+                    </div>
+                    <!--  Scholarly Publications ends -->
+                </div>
+                <p style="font-family:Lucida Sans Unicode,Lucida Grande,sans-serif;">
+                </p>
 
+            </div>
+        </div>
+    </div>
+</div>
+    """
     # ✅ PRE-ESCAPE HTML FOR JAVASCRIPT (CRITICAL FIX)
     escaped_html = (
         output_html
