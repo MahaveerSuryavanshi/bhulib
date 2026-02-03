@@ -5,9 +5,58 @@ import streamlit.components.v1 as components
 st.set_page_config(page_title="CSV → HTML Snippet Generator", layout="wide")
 
 st.title("📄 CSV to HTML Scholarly Publications Generator")
-st.write("Upload Scopus-style CSV and get a single HTML snippet (A–Z by first author).")
+st.write("Upload Scopus-style CSV and get a single HTML snippet (APA 7th, A–Z by first author).")
 
 uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
+
+
+# ---------- FIXED HTML WRAPPERS ----------
+
+HTML_HEADER = """
+<div class="container">
+    <div class="row" ng-init="GetAboutUs()">
+        <div class="col-sm-12 ng-binding" ng-bind-html="trustAsHtml(AboutUsHome)">
+            <div class="preview-box active" id="eng4" style="display: block;">
+                <p ng-bind-html="trustAsHtml(ApproveBodyContent.BodyContentEng)" class="ng-binding"></p>
+                <div style="max-width:100%; overflow:hidden">
+                    <iframe frameborder="0" height="1800px" scrolling="no"
+                        src="https://dl.bhu.ac.in/newar/" width="100%"></iframe>
+                </div>
+
+                <div class="News"
+                    style="background-color:#c0392b; border:1px solid; margin:2px auto; max-width:1200px">
+                    &nbsp;
+                    <p style="margin:14px; text-align:center">
+                        <span style="font-size:28px; font-family:Lucida Sans Unicode,Lucida Grande,sans-serif; color:#ffffff">
+                            <strong>Recent Scholarly Publications of BHU Researchers</strong>
+                        </span><br>
+                        <span style="font-size:22px; font-family:Lucida Sans Unicode,Lucida Grande,sans-serif; color:#ffffff">
+                            <strong>( January 2026 )</strong>
+                        </span>
+                    </p>
+                    &nbsp;
+
+                    <!-- Scholarly Publications Starts -->
+                    <div class="contents"
+                        style="background-color:#fbf5f5; border:1px solid #cccccc;
+                               color:#222222; font-family:Lucida Sans Unicode,Lucida Grande,sans-serif;
+                               font-size:16px; line-height:22px; margin-top:10px;
+                               padding:0 20px 20px">
+                        <div class="xyz"
+                             style="height:300px; overflow-x:hidden; overflow-y:scroll; width:100%">
+"""
+
+HTML_FOOTER = """
+                        </div>
+                    </div>
+                    <!-- Scholarly Publications ends -->
+                </div>
+                <p style="font-family:Lucida Sans Unicode,Lucida Grande,sans-serif;"></p>
+            </div>
+        </div>
+    </div>
+</div>
+"""
 
 
 # ---------- HELPERS ----------
@@ -53,37 +102,27 @@ def build_entry(idx, row):
 
     volume = clean_number(row["Volume"])
     issue = clean_number(row["Issue"])
-
     page_start = clean_number(row["Page start"])
     page_end = clean_number(row["Page end"])
-
     doi = row["DOI"]
 
     volume_part = f"<em>{volume}</em>" if volume else ""
     issue_part = f"({issue})" if issue else ""
+    pages_part = f", {page_start}–{page_end}" if page_start and page_end else ""
 
-    pages_part = ""
-    if page_start and page_end:
-        pages_part = f", {page_start}–{page_end}"
-
-    # Get the current date and time
-    current_date = datetime.datetime.now()
-    
-    # Use strftime with "%B" to get the full month name
-    full_month_name = current_date.strftime("%B")
+    doi_part = (
+        f'<a href="https://doi.org/{doi}" target="_blank">https://doi.org/{doi}</a>'
+        if pd.notna(doi) else ""
+    )
 
     return f"""
-
-                        
 <p style="font-family:Lucida Sans Unicode,Lucida Grande,sans-serif;">
 <strong>{idx}.</strong>
 {authors} ({year}). {title}.
 <em>{journal}</em>{', ' if volume_part else ''}{volume_part}{issue_part}{pages_part}.
-{'<a href="https://doi.org/' + doi + '" target="_blank">https://doi.org/' + doi + '</a>' if pd.notna(doi) else ''}
+{doi_part}
 </p>
 <p style="font-family:Lucida Sans Unicode,Lucida Grande,sans-serif;">&nbsp;</p>
-
-
 """
 
 
@@ -105,65 +144,20 @@ if uploaded_file:
     df["sort_key"] = df["Authors"].apply(first_author_key)
     df = df.sort_values("sort_key").drop(columns=["sort_key"])
 
-    output_html = f"""
-    <div class="container">
-    <div class="row" ng-init="GetAboutUs()">
-        <div class="col-sm-12 ng-binding" ng-bind-html="trustAsHtml(AboutUsHome)">
-
-            <div class="preview-box active" id="eng4" style="display: block;">
-                <p ng-bind-html="trustAsHtml(ApproveBodyContent.BodyContentEng)" class="ng-binding"></p>
-                <div style="max-width:100%; overflow:hidden">
-                    <iframe frameborder="0" height="1800px" scrolling="no" src="https://dl.bhu.ac.in/newar/"
-                        width="100%"></iframe>
-                </div>
-
-                <div class="News"
-                    style="background-color:#c0392b; border:1px solid; margin-bottom:2px; margin-left:auto; margin-right:auto; margin-top:2px; max-width:1200px">
-                    &nbsp;
-                    <p style="margin-left:14px; margin-right:14px; text-align:center">
-                        <span style="font-size:28px">
-                            <span style="font-family:Lucida Sans Unicode,Lucida Grande,sans-serif">
-                                <span style="color:#ffffff"><strong>Recent Scholarly Publications of BHU
-                                        Researchers</strong></span>
-                            </span>
-                        </span>
-                        <br>
-                        <span style="font-size:22px">
-                            <span style="font-family:Lucida Sans Unicode,Lucida Grande,sans-serif">
-                            <span style="color:#ffffff"><strong>( January &nbsp; 2026) </strong></span>
-                            </span>
-                        </span>
-                    </p>
-                    &nbsp;
-                    <!--  Scholarly Publications Starts -->
-                    <div class="contents"
-                        style="background-color:#fbf5f5; border:1px solid #cccccc; color:#222222; font-family:Lucida Sans Unicode,Lucida Grande,sans-serif; font-size:16px; line-height:22px; margin-top:10px; padding:0 20px 20px">
-                        <div class="xyz" style="height:300px; overflow-x:hidden; overflow-y:scroll; width:100%">
-    """
+    entries_html = ""
     for idx, (_, row) in enumerate(df.iterrows(), start=1):
-        output_html += build_entry(idx, row)
+        entries_html += build_entry(idx, row)
+
+    output_html = HTML_HEADER + entries_html + HTML_FOOTER
 
     st.subheader("Generated HTML (Copy / Download)")
 
     st.text_area(
         "Final HTML Snippet",
         output_html,
-        height=600,
-        key="html_output"
+        height=600
     )
-    output_html +=f"""  </div>
-                    </div>
-                    <!--  Scholarly Publications ends -->
-                </div>
-                <p style="font-family:Lucida Sans Unicode,Lucida Grande,sans-serif;">
-                </p>
 
-            </div>
-        </div>
-    </div>
-</div>
-    """
-    # ✅ PRE-ESCAPE HTML FOR JAVASCRIPT (CRITICAL FIX)
     escaped_html = (
         output_html
         .replace("\\", "\\\\")
@@ -171,7 +165,6 @@ if uploaded_file:
         .replace("$", "\\$")
     )
 
-    # 📋 COPY BUTTON (NO SYNTAX ERROR)
     components.html(
         f"""
         <script>
@@ -182,15 +175,8 @@ if uploaded_file:
         </script>
 
         <button onclick="copyToClipboard()"
-        style="
-            background-color:#4CAF50;
-            color:white;
-            padding:10px 16px;
-            border:none;
-            border-radius:6px;
-            cursor:pointer;
-            font-size:14px;
-        ">
+        style="background:#4CAF50;color:white;padding:10px 16px;
+               border:none;border-radius:6px;cursor:pointer;font-size:14px;">
         📋 Copy HTML
         </button>
         """,
@@ -198,8 +184,8 @@ if uploaded_file:
     )
 
     st.download_button(
-        label="⬇ Download HTML File",
-        data=output_html,
-        file_name="scholarly_publications.html",
-        mime="text/html"
+        "⬇ Download HTML File",
+        output_html,
+        "scholarly_publications.html",
+        "text/html"
     )
