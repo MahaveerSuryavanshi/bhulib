@@ -108,12 +108,20 @@ if uploaded_file:
         key="html_output"
     )
 
-    # 📋 COPY BUTTON (JavaScript)
+    # ✅ PRE-ESCAPE HTML FOR JAVASCRIPT (CRITICAL FIX)
+    escaped_html = (
+        output_html
+        .replace("\\", "\\\\")
+        .replace("`", "\\`")
+        .replace("$", "\\$")
+    )
+
+    # 📋 COPY BUTTON (NO SYNTAX ERROR)
     components.html(
         f"""
         <script>
         function copyToClipboard() {{
-            navigator.clipboard.writeText(`{output_html.replace("`", "\\`")}`);
+            navigator.clipboard.writeText(`{escaped_html}`);
             alert("HTML copied to clipboard!");
         }}
         </script>
