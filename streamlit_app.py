@@ -2,17 +2,70 @@ import streamlit as st
 import pandas as pd
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="CSV → HTML Snippet Generator", layout="wide")
+# ---------- PAGE CONFIG ----------
+st.set_page_config(
+    page_title="CSV → HTML Snippet Generator | BHU Home Page",
+    layout="wide",
+    page_icon="logo.png"
+)
 
-st.title("📄 CSV to HTML Scholarly Publications Generator")
-st.write("Upload Scopus-style CSV and get a single HTML snippet (APA 7th, A–Z by first author).")
+# ---------- HEADER ----------
+col1, col2 = st.columns([1, 6])
+
+with col1:
+    st.image("logo.png", width=200)
+
+with col2:
+    st.markdown(
+        "<h1 style='margin-top: 30px;'>CSV to HTML Scholarly Publications Generator</h1>",
+        unsafe_allow_html=True
+    )
+
+st.write(
+    "Upload Scopus-style CSV and get a single HTML snippet "
+    "(APA 7th, A–Z by first author)."
+)
+st.write(
+    "Step 1. Upload CSV file."
+)
+st.write(
+    "Step 2. Open Admin Dashboard"
+)
+st.write(
+    "Step 3. Copy generated english and hindi template and paste them respectively"
+)
+# ---------- MONTH & YEAR INPUT ----------
+months_en = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+]
+
+months_hi = {
+    "January": "जनवरी", "February": "फ़रवरी", "March": "मार्च",
+    "April": "अप्रैल", "May": "मई", "June": "जून",
+    "July": "जुलाई", "August": "अगस्त", "September": "सितंबर",
+    "October": "अक्टूबर", "November": "नवंबर", "December": "दिसंबर"
+}
+
+col_m, col_y = st.columns(2)
+
+with col_m:
+    selected_month = st.selectbox("Month", months_en)
+
+with col_y:
+    selected_year = st.number_input(
+        "Year", min_value=2000, max_value=2100, value=2026, step=1
+    )
+
+month_en = selected_month
+month_hi = months_hi[selected_month]
+year_str = str(selected_year)
 
 uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
 
-
 # ---------- FIXED HTML WRAPPERS ----------
 
-HTML_HEADER = """
+HTML_HEADER_EN = f"""
 <div class="container">
     <div class="row" ng-init="GetAboutUs()">
         <div class="col-sm-12 ng-binding" ng-bind-html="trustAsHtml(AboutUsHome)">
@@ -31,12 +84,11 @@ HTML_HEADER = """
                             <strong>Recent Scholarly Publications of BHU Researchers</strong>
                         </span><br>
                         <span style="font-size:22px; font-family:Lucida Sans Unicode,Lucida Grande,sans-serif; color:#ffffff">
-                            <strong>( January 2026 )</strong>
+                            <strong>( {month_en} {year_str} )</strong>
                         </span>
                     </p>
                     &nbsp;
 
-                    <!-- Scholarly Publications Starts -->
                     <div class="contents"
                         style="background-color:#fbf5f5; border:1px solid #cccccc;
                                color:#222222; font-family:Lucida Sans Unicode,Lucida Grande,sans-serif;
@@ -46,10 +98,48 @@ HTML_HEADER = """
                              style="height:300px; overflow-x:hidden; overflow-y:scroll; width:100%">
 """
 
+
+HTML_HEADER_HI = f"""
+<div class="container">
+    <div class="row" ng-init="GetAboutUs()">
+        <div class="col-sm-12 ng-binding" ng-bind-html="trustAsHtml(AboutUsHome)">
+            <div class="container">
+                <div class="row">
+                    <div class="col-sm-12 ng-binding">
+                        <div class="active preview-box" id="eng4" style="display:block">
+                            <p>&nbsp;</p>
+
+                            <div style="max-width:100%; overflow:hidden">
+                                <iframe frameborder="0" height="1800px" scrolling="no"
+                                    src="https://dl.bhu.ac.in/newar/hn/" width="100%"></iframe>
+                            </div>
+
+                            <div class="News"
+                                style="background-color:#c0392b; border:1px solid; margin:2px auto; max-width:1200px">
+                                &nbsp;
+                                <p style="margin:14px; text-align:center">
+                                    <span style="font-size:28px; font-family:Lucida Sans Unicode,Lucida Grande,sans-serif; color:#ffffff">
+                                        <strong>बीएचयू शोधकर्ताओं के हालिया शैक्षणिक प्रकाशन</strong>
+                                    </span><br>
+                                    <span style="font-size:22px; font-family:Lucida Sans Unicode,Lucida Grande,sans-serif; color:#ffffff">
+                                        <strong>( {month_hi} {year_str} )</strong>
+                                    </span>
+                                </p>
+                                &nbsp;
+
+                                <div class="contents"
+                                    style="background-color:#fbf5f5; border:1px solid #cccccc;
+                                           color:#222222; font-family:Lucida Sans Unicode,Lucida Grande,sans-serif;
+                                           font-size:16px; line-height:22px; margin-top:10px;
+                                           padding:0 20px 20px">
+                                    <div class="xyz"
+                                         style="height:300px; overflow-x:hidden; overflow-y:scroll; width:100%">
+"""
+
+
 HTML_FOOTER = """
                         </div>
                     </div>
-                    <!-- Scholarly Publications ends -->
                 </div>
                 <p style="font-family:Lucida Sans Unicode,Lucida Grande,sans-serif;"></p>
             </div>
@@ -57,7 +147,6 @@ HTML_FOOTER = """
     </div>
 </div>
 """
-
 
 # ---------- HELPERS ----------
 
@@ -126,10 +215,8 @@ def build_entry(idx, row):
 """
 
 
-# ---------- MAIN ----------
-
-if uploaded_file:
-    df = pd.read_csv(uploaded_file)
+def generate_html(header, df):
+    df = df.copy()
 
     required_cols = [
         "Authors", "Year", "Title",
@@ -140,7 +227,6 @@ if uploaded_file:
     df = df[required_cols]
     df = df.dropna(subset=["Authors", "Title", "Year"])
 
-    # 🔤 SORT A–Z BY FIRST AUTHOR
     df["sort_key"] = df["Authors"].apply(first_author_key)
     df = df.sort_values("sort_key").drop(columns=["sort_key"])
 
@@ -148,44 +234,63 @@ if uploaded_file:
     for idx, (_, row) in enumerate(df.iterrows(), start=1):
         entries_html += build_entry(idx, row)
 
-    output_html = HTML_HEADER + entries_html + HTML_FOOTER
+    return header + entries_html + HTML_FOOTER
 
-    st.subheader("Generated HTML (Copy / Download)")
 
-    st.text_area(
-        "Final HTML Snippet",
-        output_html,
-        height=600
-    )
+# ---------- MAIN (TABS) ----------
 
-    escaped_html = (
-        output_html
-        .replace("\\", "\\\\")
-        .replace("`", "\\`")
-        .replace("$", "\\$")
-    )
+if uploaded_file:
+    try:
+        df_original = pd.read_csv(uploaded_file)
+    except pd.errors.EmptyDataError:
+        st.error("The uploaded CSV file is empty.")
+        st.stop()
 
-    components.html(
-        f"""
-        <script>
-        function copyToClipboard() {{
-            navigator.clipboard.writeText(`{escaped_html}`);
-            alert("HTML copied to clipboard!");
-        }}
-        </script>
+    tab_en, tab_hi = st.tabs(["🇬🇧 English", "🇮🇳 हिंदी"])
 
-        <button onclick="copyToClipboard()"
-        style="background:#4CAF50;color:white;padding:10px 16px;
-               border:none;border-radius:6px;cursor:pointer;font-size:14px;">
-        📋 Copy HTML
-        </button>
-        """,
-        height=60
-    )
+    for tab, header, label, fname in [
+        (tab_en, HTML_HEADER_EN, "English", "scholarly_publications_en.html"),
+        (tab_hi, HTML_HEADER_HI, "Hindi", "scholarly_publications_hi.html"),
+    ]:
+        with tab:
+            output_html = generate_html(header, df_original)
 
-    st.download_button(
-        "⬇ Download HTML File",
-        output_html,
-        "scholarly_publications.html",
-        "text/html"
-    )
+            st.subheader(f"Generated HTML ({label})")
+
+            st.text_area(
+                "Final HTML Snippet",
+                output_html,
+                height=600
+            )
+
+            escaped_html = (
+                output_html
+                .replace("\\", "\\\\")
+                .replace("`", "\\`")
+                .replace("$", "\\$")
+            )
+
+            components.html(
+                f"""
+                <script>
+                function copyToClipboard() {{
+                    navigator.clipboard.writeText(`{escaped_html}`);
+                    alert("HTML copied to clipboard!");
+                }}
+                </script>
+
+                <button onclick="copyToClipboard()"
+                style="background:#4CAF50;color:white;padding:10px 16px;
+                       border:none;border-radius:6px;cursor:pointer;font-size:14px;">
+                COPY HTML
+                </button>
+                """,
+                height=60
+            )
+            # download button for cone snippet
+            st.download_button(
+                f"Download {label} HTML File",
+                output_html,
+                fname,
+                "text/html"
+            )
